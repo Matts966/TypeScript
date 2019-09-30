@@ -2720,7 +2720,7 @@ namespace ts {
             emit(node.name);
             emitTypeAnnotation(node.type);
             const nameEnd = node.name.end;
-            emitInitializer(node.initializer, node.type ? node.type.end : node.initializer ? nameEnd == node.initializer.end ? -1 : nameEnd : nameEnd, node);
+            emitInitializer(node.initializer, node.type ? node.type.end : node.initializer ? nameEnd === node.initializer.end ? -1 : nameEnd : nameEnd, node);
         }
 
         function emitVariableDeclarationList(node: VariableDeclarationList) {
