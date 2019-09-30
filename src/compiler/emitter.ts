@@ -2719,7 +2719,7 @@ namespace ts {
         function emitVariableDeclaration(node: VariableDeclaration) {
             emit(node.name);
             emitTypeAnnotation(node.type);
-            emitInitializer(node.initializer, node.type ? node.type.end : node.name.end, node);
+            emitInitializer(node.initializer, node.type ? node.type.end : 0, node);
         }
 
         function emitVariableDeclarationList(node: VariableDeclarationList) {
