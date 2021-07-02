@@ -328,7 +328,7 @@ function f30(x: string | number | undefined) {
 }
 
 function f31(x: { a: string | number }) {
->f31 : (x: { a: string | number; }) => void
+>f31 : (x: {    a: string | number;}) => void
 >x : { a: string | number; }
 >a : string | number
 
@@ -435,6 +435,34 @@ function f42(x: number) {
     }
     x;  // Unreachable
 >x : number
+}
+
+function f43() {
+>f43 : () => void
+
+    const fail = (): never => { throw new Error(); };
+>fail : () => never
+>(): never => { throw new Error(); } : () => never
+>new Error() : Error
+>Error : ErrorConstructor
+
+    const f = [fail];
+>f : (() => never)[]
+>[fail] : (() => never)[]
+>fail : () => never
+
+    fail();  // No effect (missing type annotation)
+>fail() : never
+>fail : () => never
+
+    f[0]();  // No effect (not a dotted name)
+>f[0]() : never
+>f[0] : () => never
+>f : (() => never)[]
+>0 : 0
+
+    f;
+>f : (() => never)[]
 }
 
 // Repro from #33582
@@ -638,4 +666,75 @@ const Component = registerComponent('test-component', {
 >counter : any
 	}
 });
+
+// Repro from #36147
+
+class MyThrowable {
+>MyThrowable : MyThrowable
+
+    throw(): never {
+>throw : () => never
+
+        throw new Error();
+>new Error() : Error
+>Error : ErrorConstructor
+    }
+}
+
+class SuperThrowable extends MyThrowable {
+>SuperThrowable : SuperThrowable
+>MyThrowable : MyThrowable
+
+    err(msg: string): never {
+>err : (msg: string) => never
+>msg : string
+
+        super.throw()
+>super.throw() : never
+>super.throw : () => never
+>super : MyThrowable
+>throw : () => never
+    }
+    ok(): never {
+>ok : () => never
+
+        this.throw()
+>this.throw() : never
+>this.throw : () => never
+>this : this
+>throw : () => never
+    }
+}
+
+// Repro from #40346
+
+interface Services {
+    panic(message: string): never;
+>panic : (message: string) => never
+>message : string
+}
+
+function foo(services: Readonly<Services>, s: string | null): string {
+>foo : (services: Readonly<Services>, s: string | null) => string
+>services : Readonly<Services>
+>s : string | null
+>null : null
+
+    if (s === null) {
+>s === null : boolean
+>s : string | null
+>null : null
+
+        services.panic("ouch");
+>services.panic("ouch") : never
+>services.panic : (message: string) => never
+>services : Readonly<Services>
+>panic : (message: string) => never
+>"ouch" : "ouch"
+
+    } else {
+        return s;
+>s : string
+    }
+}
 

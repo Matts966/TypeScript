@@ -30,10 +30,22 @@ function f01(x: unknown) {
         x[0].length;
     }
     if (!!true) {
+        assertIsArrayOfStrings(false);
+        x;
+    }
+    if (!!true) {
         assert(x === undefined || typeof x === "string");
         x;  // string | undefined
         assertDefined(x);
         x;  // string
+    }
+    if (!!true) {
+        assert(false);
+        x;  // Unreachable
+    }
+    if (!!true) {
+        assert(false && x === undefined);
+        x;  // Unreachable
     }
 }
 
@@ -75,6 +87,10 @@ function f10(x: string | undefined) {
         Debug.assertDefined(x);
         x.length;
     }
+    if (!!true) {
+        Debug.assert(false);
+        x;  // Unreachable
+    }
 }
 
 class Test {
@@ -106,10 +122,35 @@ class Test {
         this.assertIsTest2();
         this.z;
     }
+    baz(x: number) {
+        this.assert(false);
+        x;  // Unreachable
+    }
 }
 
 class Test2 extends Test {
     z = 0;
+}
+
+class Derived extends Test {
+    foo(x: unknown) {
+        super.assert(typeof x === "string");
+        x.length;
+    }
+    baz(x: number) {
+        super.assert(false);
+        x;  // Unreachable
+    }
+}
+
+function f11(items: Test[]) {
+    for (let item of items) {
+        if (item.isTest2()) {
+            item.z;
+        }
+        item.assertIsTest2();
+        item.z;
+    }
 }
 
 // Invalid constructs
@@ -125,6 +166,35 @@ declare class Wat {
     set p2(x: asserts this is string);
 }
 
+function f20(x: unknown) {
+    const assert = (value: unknown): asserts value => {}
+    assert(typeof x === "string");  // Error
+    const a = [assert];
+    a[0](typeof x === "string");  // Error
+    const t1 = new Test();
+    t1.assert(typeof x === "string");  // Error
+    const t2: Test = new Test();
+    t2.assert(typeof x === "string");
+}
+
+// Repro from #35940
+
+interface Thing {
+    good: boolean;
+    isGood(): asserts this is GoodThing;
+}
+
+interface GoodThing {
+    good: true;
+}
+
+function example1(things: Thing[]) {
+    for (let thing of things) {
+        thing.isGood();
+        thing.good;
+    }
+}
+
 
 //// [assertionTypePredicates1.js]
 "use strict";
@@ -132,10 +202,12 @@ var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
         extendStatics = Object.setPrototypeOf ||
             ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
         return extendStatics(d, b);
     };
     return function (d, b) {
+        if (typeof b !== "function" && b !== null)
+            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
         extendStatics(d, b);
         function __() { this.constructor = d; }
         d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
@@ -164,10 +236,22 @@ function f01(x) {
         x[0].length;
     }
     if (!!true) {
+        assertIsArrayOfStrings(false);
+        x;
+    }
+    if (!!true) {
         assert(x === undefined || typeof x === "string");
         x; // string | undefined
         assertDefined(x);
         x; // string
+    }
+    if (!!true) {
+        assert(false);
+        x; // Unreachable
+    }
+    if (!!true) {
+        assert(false && x === undefined);
+        x; // Unreachable
     }
 }
 function f02(x) {
@@ -204,6 +288,10 @@ function f10(x) {
         Debug.assertDefined(x);
         x.length;
     }
+    if (!!true) {
+        Debug.assert(false);
+        x; // Unreachable
+    }
 }
 var Test = /** @class */ (function () {
     function Test() {
@@ -239,6 +327,10 @@ var Test = /** @class */ (function () {
         this.assertIsTest2();
         this.z;
     };
+    Test.prototype.baz = function (x) {
+        this.assert(false);
+        x; // Unreachable
+    };
     return Test;
 }());
 var Test2 = /** @class */ (function (_super) {
@@ -250,6 +342,48 @@ var Test2 = /** @class */ (function (_super) {
     }
     return Test2;
 }(Test));
+var Derived = /** @class */ (function (_super) {
+    __extends(Derived, _super);
+    function Derived() {
+        return _super !== null && _super.apply(this, arguments) || this;
+    }
+    Derived.prototype.foo = function (x) {
+        _super.prototype.assert.call(this, typeof x === "string");
+        x.length;
+    };
+    Derived.prototype.baz = function (x) {
+        _super.prototype.assert.call(this, false);
+        x; // Unreachable
+    };
+    return Derived;
+}(Test));
+function f11(items) {
+    for (var _i = 0, items_1 = items; _i < items_1.length; _i++) {
+        var item = items_1[_i];
+        if (item.isTest2()) {
+            item.z;
+        }
+        item.assertIsTest2();
+        item.z;
+    }
+}
+function f20(x) {
+    var assert = function (value) { };
+    assert(typeof x === "string"); // Error
+    var a = [assert];
+    a[0](typeof x === "string"); // Error
+    var t1 = new Test();
+    t1.assert(typeof x === "string"); // Error
+    var t2 = new Test();
+    t2.assert(typeof x === "string");
+}
+function example1(things) {
+    for (var _i = 0, things_1 = things; _i < things_1.length; _i++) {
+        var thing = things_1[_i];
+        thing.isGood();
+        thing.good;
+    }
+}
 
 
 //// [assertionTypePredicates1.d.ts]
@@ -274,10 +408,16 @@ declare class Test {
     assertThis(): asserts this;
     bar(): void;
     foo(x: unknown): void;
+    baz(x: number): void;
 }
 declare class Test2 extends Test {
     z: number;
 }
+declare class Derived extends Test {
+    foo(x: unknown): void;
+    baz(x: number): void;
+}
+declare function f11(items: Test[]): void;
 declare let Q1: new (x: unknown) => x is string;
 declare let Q2: new (x: boolean) => asserts x;
 declare let Q3: new (x: unknown) => asserts x is string;
@@ -287,3 +427,12 @@ declare class Wat {
     get p2(): asserts this is string;
     set p2(x: asserts this is string);
 }
+declare function f20(x: unknown): void;
+interface Thing {
+    good: boolean;
+    isGood(): asserts this is GoodThing;
+}
+interface GoodThing {
+    good: true;
+}
+declare function example1(things: Thing[]): void;
